@@ -1,0 +1,20 @@
+1,Guybrush Threepwood,2,3,4,5,6,9
+2,Elaine Marley,1,3,4,6,7,8
+3,Largo LaGrande,1,2,4,5,6,9
+4,LeChuck,1,2,3,6,8
+5,Wally B. Feed,1,3,8,6
+6,Murray,1,2,3,4,9
+7,Alfredo Fettucini,2,8,9
+8,Gobernador Phatt,2,4,5,7
+9,Smilin' Stan S. Stanman,1,3,6,7
+10,Pintor Carolina,1,2,6,8,11,18,19,20
+11,Lopez Diego,1,2,3
+12,Quesada Marcos,4,5,6
+13,Buendía Aureliano,2,6,8,10
+14,Poirot Hercules, 
+15,Winter Simón,4,5,6,15,18
+16,Tesla Nikola,16
+17,Ada Lovelace,16,3,4,5
+18,Marconi Guillermo,5,4
+19,Sartor Oscar,1,2,3,4,5,6,7,8,9,10,12
+20,Viappani Lucila,2,1,17
