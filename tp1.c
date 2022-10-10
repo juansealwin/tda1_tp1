@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <ctype.h>
 #include "types.h"
 #include "tp1.h"
 #define MIN_ARGS 3
@@ -126,7 +125,7 @@ int main(int argc, char* argv[]) {
 		guests[i].name = (char*) malloc(sizeof(char*) * len_name);
 		strncpy(guests[i].name, read_buffer, len_name);
 
-		if (len_contacts > MIN_CONTACTS) {
+		if (len_contacts > 3) {
 			guests[i].contacts = (char*) malloc(sizeof(char*) * (len_contacts));
 			strncpy(guests[i].contacts, &read_buffer[len_name + 1], len_contacts);
 
