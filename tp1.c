@@ -109,8 +109,8 @@ int main(int argc, char* argv[]) {
 	size_t total_members = 0;
 
 	// Prepare the structure to load the members and the list of the members who will not be invited
-	members_t* guests = (members_t*) malloc(sizeof(members_t*) *  n_members);
-	size_t* not_invited_list = (size_t*) malloc(sizeof(size_t*) * n_members);
+	members_t* guests = (members_t*) malloc(sizeof(members_t) *  n_members);
+	size_t* not_invited_list = (size_t*) malloc(sizeof(size_t) * n_members);
 	char* str_member_idx = (char*) malloc(sizeof(char*) * max_digits);
 	size_t not_invited_index = 0;
 
@@ -122,17 +122,11 @@ int main(int argc, char* argv[]) {
 		len_name = len_split(read_buffer, DELIM, 2);
 		len_contacts = strlen(read_buffer) - len_name;
 			
-		guests[i].name = (char*) malloc(sizeof(char*) * len_name);
+		guests[i].name = (char*) malloc(sizeof(char) * len_name);
+		guests[i].contacts = (char*) malloc(sizeof(char) * (len_contacts));
 		strncpy(guests[i].name, read_buffer, len_name);
-
-		if (len_contacts > 3) {
-			guests[i].contacts = (char*) malloc(sizeof(char*) * (len_contacts));
-			strncpy(guests[i].contacts, &read_buffer[len_name + 1], len_contacts);
-
-		} else {
-			guests[i].contacts = "";
-		}
-
+		strncpy(guests[i].contacts, &read_buffer[len_name + 1], len_contacts - 2);
+		
 		guests[i].total_contacts = count_contacts(guests[i].contacts, DELIM);
 
 		// If the member has less than three contacts, we add it to the list
@@ -148,12 +142,12 @@ int main(int argc, char* argv[]) {
 		char* delim = ",";
 		size_t member_idx = not_invited_list[i];
 		char* temp;
-		
+
 		// +1 para que se adecue desde la estructura de datos que comienza en 0
 		snprintf(str_member_idx ,max_digits ,"%zu" ,(member_idx + 1));
-		
+
 		char* contact = strtok(guests[member_idx].contacts, delim);
-		
+
 		while (contact != NULL) {
 			
 			// -1 para que se adecue a la estructura de datos que comienza en 0
@@ -172,10 +166,10 @@ int main(int argc, char* argv[]) {
 	// Print the guests and free the internal data
 	for (size_t i = 0 ; i < n_members && i < total_members ; i++) {
 		if (guests[i].total_contacts >= MIN_CONTACTS) {
-			printf("%s\n", guests[i].name);
-			free(guests[i].name);
-			free(guests[i].contacts);
+			printf("%s\n", guests[i].name);	
 		}
+		free(guests[i].name);
+		free(guests[i].contacts);
 	}
 
 	// Free structures	
