@@ -19,4 +19,6 @@ size_t len_split(char* ,char , size_t);
 
 size_t count_contacts(char*, char);
 
+bool_t isnumber(char*);
+
 void remove_contact(members_t*, char*);
