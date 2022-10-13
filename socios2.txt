@@ -17,4 +17,4 @@
 17,Buendia Aureliano,1,2,11,16
 18,George Westinghouse,1,2,3,19,20
 19,Pintor Carolina,18,20
-20,Victoria Windey,4,5,6,18
+20,Victoria Windey,4,5,6,18,19

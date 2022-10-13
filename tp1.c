@@ -39,7 +39,7 @@ bool_t isnumber(char* s)
 {
 	for (size_t i = 0 ; s[i] != '\0' ; i++) 
 	{
-		if(s[i] >= '0' && s[i] <= '9')
+		if((s[i] >= '0' && s[i] <= '9') || (s[i] == '\n' && i > 0))
 			continue;
 		else
 			return FALSE;
@@ -49,9 +49,10 @@ bool_t isnumber(char* s)
 
 size_t count_contacts(char* contacts, char delim)
 {
-	size_t total_contacts = 1;
-
-	for(size_t i = 1; contacts[i] ; i++)
+	size_t len_contacts = strlen(contacts);
+	size_t total_contacts = len_contacts > 1 ? 1 : 0;
+	
+	for(size_t i = 0; contacts[i] && total_contacts ; i++)
 		if (contacts[i] == delim) total_contacts++;
 	
 	return total_contacts;
@@ -81,17 +82,13 @@ void remove_contact(members_t* member, char* contact)
 
     for (i = 0; member->contacts[i] ; i++)
 	{
-
 		if (member->contacts[i] == contact[0])
 		{
-			
 			delete = 1;
-			
+
 			for (j = 1 ; j < len_contact ; j++) 
-			{
 				if (member->contacts[i + j] != contact[j]) 
 					delete = 0;
-			}
 
 			if (delete) 
 			{
@@ -125,23 +122,24 @@ int main(int argc, char* argv[])
     }
 
 	char* read_buffer = NULL;
+	size_t len_buff = 0;
 
+	size_t n_members = args_values.number;
 	size_t max_digits = 0; 
-	for (size_t i = 0; i != 0; max_digits++)
+	for (size_t i = n_members; i != 0; max_digits++)
 		i /= 10;
 	
-	size_t n_members = args_values.number;
 	// Case if n > total number of members
 	size_t total_members = 0;
 
 	// Prepare the structure to load the members and the list of the members who will not be invited
 	members_t* guests = (members_t*) malloc(sizeof(members_t) *  n_members);
 	size_t* not_invited_list = (size_t*) malloc(sizeof(size_t) * n_members);
-	char* str_member_idx = (char*) malloc(sizeof(char*) * max_digits);
+	char* str_member_idx = (char*) malloc(sizeof(char) * max_digits);
 	size_t not_invited_index = 0;
 
 	// Read all the lines and store data
-	for (size_t i = 0, len_name = 0, len_contacts = 0, len_buff = 0 ; 
+	for (size_t i = 0, len_name = 0, len_contacts = 0 ; 
 		getdelim(&read_buffer, &len_buff, END_LINE, guest_file) > 1 && i < n_members; 
 		i++) 
 	{
@@ -151,17 +149,22 @@ int main(int argc, char* argv[])
 			
 		guests[i].name = (char*) malloc(sizeof(char) * len_name);
 		guests[i].contacts = (char*) malloc(sizeof(char) * (len_contacts));
+		
 		strncpy(guests[i].name, read_buffer, len_name);
 		strncpy(guests[i].contacts, &read_buffer[len_name + 1], len_contacts);
+		guests[i].name[len_name] = '\0';
+		guests[i].contacts[len_contacts] = '\0';
 		
 		guests[i].total_contacts = count_contacts(guests[i].contacts, DELIM);
-
+		
 		// If the member has less than three contacts, we add it to the list
 		if (guests[i].total_contacts < MIN_CONTACTS) 
 			not_invited_list[not_invited_index++] = i;
 	
 		total_members++;
 	}
+
+	fclose(guest_file);
 
 	// Start to cross off possible guests
 	for (size_t i = 0 ; i < not_invited_index ; i++) 
@@ -170,21 +173,21 @@ int main(int argc, char* argv[])
 		char* delim = ",";
 		size_t member_idx = not_invited_list[i];
 		char* temp;
-
+		
 		// +1 para que se adecue desde la estructura de datos que comienza en 0
-		snprintf(str_member_idx ,max_digits ,"%zu" ,(member_idx + 1));
+		snprintf(str_member_idx , sizeof(char) *  (max_digits + 2) ,"%zu" ,(member_idx + 1));
 		
 		char* contact = strtok(guests[member_idx].contacts, delim);
-		
+
 		while (contact != NULL) 
 		{
 			if (isnumber(contact)) 
 			{
 				// -1 para que se adecue a la estructura de datos que comienza en 0
 				size_t index_contact = strtol(contact, &temp, 10) - 1;
-				
+
 				remove_contact(&guests[index_contact], str_member_idx);
-				
+
 				// if member has less than the minimum number of guests we add it to the list
 				if (guests[index_contact].total_contacts < MIN_CONTACTS) 
 						not_invited_list[not_invited_index++] = index_contact;
