@@ -7,18 +7,27 @@ typedef struct params {
 	size_t number;
 }params_t;
 
+
+typedef struct contact {
+	size_t contact_num;
+	struct contact *prev;
+	struct contact *next;
+}contact_t;
+
 typedef struct members {
 	size_t total_contacts;
+	size_t head_contact;
+	bool_t added_uninvited_list;
 	char *name;
-	char *contacts ;
+	contact_t *contacts; 
 }members_t;
 
 status_t validate_arguments(int , char*[], params_t*);
 
 size_t len_split(char* ,char , size_t);
 
-size_t count_contacts(char*, char);
+void count_contacts(members_t*, char*);
 
-bool_t isnumber(char*);
+void remove_contact(members_t*, int);
 
-void remove_contact(members_t*, char*);
+void load_contacts(members_t *, char*, size_t);

@@ -11,17 +11,16 @@
 #define END_LINE '\n'
 #define DELIM ','
 
-status_t validate_arguments(int argc , char* argv[], params_t* args_values){
+status_t validate_arguments(int argc, char *argv[], params_t *args_values)
+{
+	if (argv == NULL)
+		return ERROR_NULL_POINTER;
 
-    if (argv == NULL)
-        return ERROR_NULL_POINTER;
-
-    if (argc != MIN_ARGS) 
+	if (argc != MIN_ARGS)
 	{
 		return ERROR_INVALID_ARGS;
-
-	} 
-	else 
+	}
+	else
 	{
 		char *ptr;
 
@@ -32,183 +31,223 @@ status_t validate_arguments(int argc , char* argv[], params_t* args_values){
 			return OK;
 		else
 			return ERROR_INVALID_ARGS;
-	}	   
-}
-
-bool_t isnumber(char* s) 
-{
-	for (size_t i = 0 ; s[i] != '\0' ; i++) 
-	{
-		if((s[i] >= '0' && s[i] <= '9') || (s[i] == '\n' && i > 0))
-			continue;
-		else
-			return FALSE;
 	}
-	return TRUE;
 }
 
-size_t count_contacts(char* contacts, char delim)
+void load_contacts(members_t *guests, char *contacts_str, size_t n_members)
 {
-	size_t len_contacts = strlen(contacts);
-	size_t total_contacts = len_contacts > 1 ? 1 : 0;
+	char *delim = ",";
+	char *ptr;
+	int contact_num;
+	contact_t *prev_contact = NULL;
+
+	guests->added_uninvited_list = FALSE;
+	char *contact_str = strtok(contacts_str, delim);
 	
-	for(size_t i = 0; contacts[i] && total_contacts ; i++)
-		if (contacts[i] == delim) total_contacts++;
-	
-	return total_contacts;
+	if (contact_str != NULL && contact_str[0] >= '0' && contact_str[0] <= '9')
+	{
+		guests->contacts = (contact_t *)malloc(sizeof(contact_t) * n_members);
+		memset(guests->contacts, 0, n_members * sizeof(contact_t));
+	}
+	else
+	{
+		guests->contacts = NULL;
+		guests->total_contacts = 0;
+		return;
+	}
+
+	contact_t *contacts = guests->contacts;
+
+	for (size_t i = 0; contact_str != NULL && i < n_members; i++)
+	{
+		contact_num = strtol(contact_str, &ptr, 10) - 1;
+
+		// Siempre y cuando el numero de contacto sea menor al total de invitados a tomar
+		if (contact_num < (int)n_members)
+		{
+			contacts[contact_num].contact_num = contact_num;
+
+			contacts[contact_num].prev = prev_contact;
+
+			// Chequeo si no es el primer contacto
+			if (prev_contact != NULL)
+			{
+				prev_contact->next = &contacts[contact_num];
+
+			// Es el primer contacto
+			}
+			else
+			{
+				guests->head_contact = contact_num;
+			}
+
+			prev_contact = &contacts[contact_num];
+
+			contacts[contact_num].next = NULL;
+
+			guests->total_contacts++;
+		}
+
+		contact_str = strtok(NULL, delim);
+	}
 }
 
-size_t len_split(char* line, char delim, size_t encounters)
+size_t len_split(char *line, char delim, size_t encounters)
 {
-	
+
 	size_t i = 0;
 
-	for(size_t counter = 0; line[i] ; i++)
+	for (size_t counter = 0; line[i]; i++)
 	{
-		if (line[i] == delim) counter++;
-		if (counter == encounters) return i;
+		if (line[i] == delim)
+			counter++;
+		if (counter == encounters)
+			return i;
 	}
 
 	return i;
 }
 
-void remove_contact(members_t* member, char* contact) 
+void remove_contact(members_t *guest, int contact_num)
 {
+	contact_t *prev_contact = NULL, *next_contact = NULL;
 
-	size_t len_contact = strlen(contact);
-	size_t len_contacts = strlen(member->contacts);
-	size_t delete = 0;
-	size_t i, j;
+	contact_t *contacts = guest->contacts;
 
-    for (i = 0; member->contacts[i] ; i++)
-	{
-		if (member->contacts[i] == contact[0])
+	// Si vale cero es que no existe dicho contacto, por lo que no hay nada que borrar
+	if (contacts[contact_num].contact_num != 0) {
+
+		if (contacts[contact_num].prev != NULL)
 		{
-			delete = 1;
+			prev_contact = contacts[contact_num].prev;
+			prev_contact->next = contacts[contact_num].next;
+		}
+		else
+		{
+			next_contact = contacts[contact_num].next;
 
-			for (j = 1 ; j < len_contact ; j++) 
-				if (member->contacts[i + j] != contact[j]) 
-					delete = 0;
-
-			if (delete) 
+			// Hay que chequear que haya un contacto siguiente
+			if (next_contact)
 			{
-				// +1 to grab what follows the comma
-				memmove(&member->contacts[i], &member->contacts[i + j] + 1, len_contacts - i );
-				member->total_contacts--;
-				
-				break;
+				next_contact->prev = NULL;
+				guest->head_contact = next_contact->contact_num;
 			}
 		}
-    }
+		
+		guest->total_contacts--;
+	}
 }
 
-
-int main(int argc, char* argv[]) 
+int main(int argc, char *argv[])
 {
 	params_t args_values;
 
-	if (validate_arguments(argc, argv, &args_values) != OK) 
+	if (validate_arguments(argc, argv, &args_values) != OK)
 	{
-        perror("Argumentos inválidos \n");
-        _exit(1);
-    }
+		perror("Argumentos inválidos \n");
+		_exit(1);
+	}
 
 	FILE *guest_file;
 
-	if((guest_file = fopen(args_values.file_name, "r+")) == NULL)
+	if ((guest_file = fopen(args_values.file_name, "r+")) == NULL)
 	{
-        perror("Error al abrir el archivo \n");
-        _exit(1);
-    }
+		perror("Error al abrir el archivo \n");
+		_exit(1);
+	}
 
-	char* read_buffer = NULL;
+	char *read_buffer = NULL;
 	size_t len_buff = 0;
 
 	size_t n_members = args_values.number;
-	size_t max_digits = 0; 
+	size_t max_digits = 0;
 	for (size_t i = n_members; i != 0; max_digits++)
 		i /= 10;
-	
+
 	// Case if n > total number of members
 	size_t total_members = 0;
 
 	// Prepare the structure to load the members and the list of the members who will not be invited
-	members_t* guests = (members_t*) malloc(sizeof(members_t) *  n_members);
-	size_t* not_invited_list = (size_t*) malloc(sizeof(size_t) * n_members);
-	char* str_member_idx = (char*) malloc(sizeof(char) * max_digits);
-	size_t not_invited_index = 0;
+	members_t *guests = (members_t *)malloc(sizeof(members_t) * n_members);
+	size_t *uninvited_list = (size_t *)malloc(sizeof(size_t) * n_members);
+	size_t uninvited_index = 0;
 
 	// Read all the lines and store data
-	for (size_t i = 0, len_name = 0, len_contacts = 0 ; 
-		getdelim(&read_buffer, &len_buff, END_LINE, guest_file) > 1 && i < n_members; 
-		i++) 
+	for (size_t i = 0, len_name = 0;
+		 getdelim(&read_buffer, &len_buff, END_LINE, guest_file) > 1 && i < n_members;
+		 i++)
 	{
-	
+
 		len_name = len_split(read_buffer, DELIM, 2);
-		len_contacts = strlen(read_buffer) - len_name;
-			
-		guests[i].name = (char*) malloc(sizeof(char) * len_name);
-		guests[i].contacts = (char*) malloc(sizeof(char) * (len_contacts));
-		
-		strncpy(guests[i].name, read_buffer, len_name);
-		strncpy(guests[i].contacts, &read_buffer[len_name + 1], len_contacts);
-		guests[i].name[len_name] = '\0';
-		guests[i].contacts[len_contacts] = '\0';
-		
-		guests[i].total_contacts = count_contacts(guests[i].contacts, DELIM);
-		
-		// If the member has less than three contacts, we add it to the list
-		if (guests[i].total_contacts < MIN_CONTACTS) 
-			not_invited_list[not_invited_index++] = i;
 	
+		guests[i].name = (char *)malloc(sizeof(char) * len_name);
+		strncpy(guests[i].name, read_buffer, len_name);
+		guests[i].name[len_name] = '\0';
+
+		load_contacts(&guests[i], &read_buffer[len_name], n_members);
+		
+		if (guests[i].total_contacts < MIN_CONTACTS) {
+			uninvited_list[uninvited_index++] = i;
+			guests[i].added_uninvited_list = TRUE;
+		}
+
 		total_members++;
 	}
 
 	fclose(guest_file);
 
 	// Start to cross off possible guests
-	for (size_t i = 0 ; i < not_invited_index ; i++) 
+	for (size_t i = 0; i < uninvited_index; i++)
 	{
-		
-		char* delim = ",";
-		size_t member_idx = not_invited_list[i];
-		char* temp;
-		
-		// +1 para que se adecue desde la estructura de datos que comienza en 0
-		snprintf(str_member_idx , sizeof(char) *  (max_digits + 2) ,"%zu" ,(member_idx + 1));
-		
-		char* contact = strtok(guests[member_idx].contacts, delim);
 
-		while (contact != NULL) 
+		size_t idx_guest_to_erase = uninvited_list[i];
+
+		members_t *guest_to_erase = &guests[idx_guest_to_erase];
+
+		contact_t *contacts = guest_to_erase->contacts;
+
+		contact_t *contact = &contacts[guest_to_erase->head_contact];
+		
+		while (contact != NULL)
 		{
-			if (isnumber(contact)) 
-			{
-				// -1 para que se adecue a la estructura de datos que comienza en 0
-				size_t index_contact = strtol(contact, &temp, 10) - 1;
+			size_t idx_contact = contact->contact_num;
+	
+			remove_contact(&guests[idx_contact], idx_guest_to_erase);
+			
+			// TODO: borrar
+			// printf("Removi contacto\n");
+			// printf("Contacto: %s tiene %zu contactos\n Conocidos: ", guests[idx_contact].name, guests[idx_contact].total_contacts);
+			// size_t head = guests[idx_contact].head_contact;
+			// contact_t *conocido = &(guests[idx_contact].contacts[head]);
+			// while(conocido){
+			// 	printf("%zu, ", (conocido->contact_num)+1);
+			// 	conocido = conocido->next;
+			// }
+			// printf("\n");
 
-				remove_contact(&guests[index_contact], str_member_idx);
-
-				// if member has less than the minimum number of guests we add it to the list
-				if (guests[index_contact].total_contacts < MIN_CONTACTS) 
-						not_invited_list[not_invited_index++] = index_contact;
+			// if member has less than the minimum number of guests we add it to the list 
+			// and if it has not added to the list yet
+			if (guests[idx_contact].total_contacts < MIN_CONTACTS && !guests[idx_contact].added_uninvited_list) {
+				uninvited_list[uninvited_index++] = idx_contact;
+				guests[idx_contact].added_uninvited_list = TRUE;
 			}
-			contact = strtok(NULL, delim);
+
+			contact = contact->next;
 		}
 	}
 
 	// Print the guests and free the internal data
-	for (size_t i = 0 ; i < n_members && i < total_members ; i++) 
+	for (size_t i = 0; i < n_members && i < total_members; i++)
 	{
-		if (guests[i].total_contacts >= MIN_CONTACTS) 
-			printf("%s\n", guests[i].name);	
+		if (guests[i].total_contacts >= MIN_CONTACTS)
+			printf("%s\n", guests[i].name);
 
 		free(guests[i].name);
 		free(guests[i].contacts);
 	}
 
-	// Free structures	
-	free(str_member_idx);
-	free(not_invited_list);
+	// Free structures
+	free(uninvited_list);
 	free(guests);
 
 	_exit(0);
