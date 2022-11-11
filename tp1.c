@@ -62,19 +62,19 @@ void load_contacts(members_t *guests, char *contacts_str, size_t n_members)
 	{
 		contact_num = strtol(contact_str, &ptr, 10) - 1;
 
-		// Siempre y cuando el numero de contacto sea menor al total de invitados a tomar
+		// As long as the number of contacts is less than the total number of guests to be taken.
 		if (contact_num < (int)n_members)
 		{
 			contacts[contact_num].contact_num = contact_num;
 
 			contacts[contact_num].prev = prev_contact;
 
-			// Chequeo si no es el primer contacto
+			// Check if it is not the first contact
 			if (prev_contact != NULL)
 			{
 				prev_contact->next = &contacts[contact_num];
 
-			// Es el primer contacto
+			// First contact
 			}
 			else
 			{
@@ -114,7 +114,7 @@ void remove_contact(members_t *guest, int contact_num)
 
 	contact_t *contacts = guest->contacts;
 
-	// Si vale cero es que no existe dicho contacto, por lo que no hay nada que borrar
+	// If it is zero, there is no such contact, so there is nothing to delete.
 	if (contacts[contact_num].contact_num != 0) {
 
 		if (contacts[contact_num].prev != NULL)
@@ -126,7 +126,7 @@ void remove_contact(members_t *guest, int contact_num)
 		{
 			next_contact = contacts[contact_num].next;
 
-			// Hay que chequear que haya un contacto siguiente
+			// Check if there is a next contact
 			if (next_contact)
 			{
 				next_contact->prev = NULL;
@@ -213,17 +213,6 @@ int main(int argc, char *argv[])
 			size_t idx_contact = contact->contact_num;
 	
 			remove_contact(&guests[idx_contact], idx_guest_to_erase);
-			
-			// TODO: borrar
-			// printf("Removi contacto\n");
-			// printf("Contacto: %s tiene %zu contactos\n Conocidos: ", guests[idx_contact].name, guests[idx_contact].total_contacts);
-			// size_t head = guests[idx_contact].head_contact;
-			// contact_t *conocido = &(guests[idx_contact].contacts[head]);
-			// while(conocido){
-			// 	printf("%zu, ", (conocido->contact_num)+1);
-			// 	conocido = conocido->next;
-			// }
-			// printf("\n");
 
 			// if member has less than the minimum number of guests we add it to the list 
 			// and if it has not added to the list yet
